@@ -1,0 +1,74 @@
+pipeline {
+    agent any
+
+    tools {
+        nodejs 'NodeJS-20' // Use the NodeJS version set in Jenkins global config
+    }
+
+    stages {
+        stage('Checkout Code') {
+            steps {
+                // Pull code from the GitHub repository
+                git branch: 'feature/dev_suryann', url: 'https://github.com/suryanarayananunna/DigitalResumeUI.git'
+            }
+        }
+
+        stage('Install Dependencies') {
+            steps {
+                // Install Angular project dependencies
+                bat 'npm install'
+            }
+        }
+
+        stage('Build Angular Project') {
+            steps {
+                // Build the Angular project for production
+                bat 'ng build'
+            }
+        }
+
+
+        stage('Archive Build Artifacts') {
+            steps {
+                // Archive the build artifacts, useful for deploying later
+                archiveArtifacts artifacts: 'dist/**/*', allowEmptyArchive: true
+            }
+        }
+
+        stage('Deploy') {
+            steps {
+                // Optionally, deploy the app to a server or hosting platform
+                // Add your deployment steps here (e.g., deploy to AWS, Firebase, etc.)
+                echo 'Deployment step would go here.'
+            }
+        }
+        
+        stage('Copy to Deployment Folder') {
+            steps {
+                script {
+                    def result = bat(script: 'xcopy dist\\* C:\\Projects\\DigiResumeProject\\Deployement\\UI /E /I /Y', returnStatus: true)
+                    if (result != 0) {
+                        error "Copying files failed with exit code ${result}"
+                    }
+                }
+            }
+        }
+
+
+    }
+
+    post {
+        always {
+            // Clean workspace after build to save space
+            cleanWs()
+        }
+        success {
+            // Notify on successful build (optional)
+            echo 'Build was successful!'
+        }
+        failure {
+            // Notify on failure (optional)
+            echo 'Build failed!'
+        }
+    }
+}
